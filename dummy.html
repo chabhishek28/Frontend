@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Fishbowl Rescue</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+            overflow: hidden;
+            color: white;
+            perspective: 1000px;
+        }
+
+        .game-container {
+            position: relative;
+            width: 900px;
+            height: 650px;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.6);
+            transform-style: preserve-3d;
+        }
+
+        /* 3D Space Background */
+        .space-3d {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .stars-3d {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .star-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+            transform-style: preserve-3d;
+        }
+
+        /* Nebula and galaxy effects */
+        .nebula {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.4;
+            transform-style: preserve-3d;
+            animation: rotateSlow 60s infinite linear;
+        }
+
+        .nebula-1 {
+            top: 50px;
+            left: 100px;
+            background: radial-gradient(circle, #7e22ce, transparent 70%);
+            transform: rotateX(60deg) rotateZ(45deg) translateZ(-200px);
+        }
+
+        .nebula-2 {
+            bottom: 100px;
+            right: 100px;
+            background: radial-gradient(circle, #3b82f6, transparent 70%);
+            transform: rotateX(-30deg) rotateZ(-30deg) translateZ(-300px);
+        }
+
+        /* 3D Fishbowl */
+        .fishbowl-3d {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 200px;
+            height: 220px;
+            transform-style: preserve-3d;
+            transform: rotateX(5deg) rotateY(5deg);
+            z-index: 20;
+        }
+
+        .bowl {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50% 50% 40% 40%;
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 
+                0 0 20px rgba(100, 200, 255, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            border: 2px solid rgba(100, 200, 255, 0.5);
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+        }
+
+        .bowl::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 40%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+            transform: translateZ(5px);
+        }
+
+        .water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: calc(1% * var(--water-level, 50));
+            background: linear-gradient(to bottom, transparent, rgba(0, 150, 255, 0.7));
+            transition: height 0.5s ease;
+            border-radius: 0 0 40% 40%;
+            transform: translateZ(1px);
+        }
+
+        .water::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translateZ(2px);
+        }
+
+        .cosmic-fish {
+            position: absolute;
+            bottom: calc(15% + (var(--water-level, 50) * 1.8px));
+            left: 50%;
+            width: 30px;
+            height: 15px;
+            background: linear-gradient(to right, #ff6a00, #ff9a00);
+            border-radius: 50% 60% 60% 50%;
+            transform: translateX(-50%) translateZ(3px);
+            transition: bottom 0.3s ease;
+            z-index: 5;
+            box-shadow: 0 0 8px #ff9a00;
+        }
+
+        .cosmic-fish::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            right: 4px;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 3px cyan;
+        }
+
+        .fish-tail {
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-right: 12px solid #ff6a00;
+            animation: tail-wiggle 0.4s infinite alternate;
+        }
+
+        /* Fish jump animation */
+        .fish-jump {
+            animation: fishJump 1s ease-out;
+        }
+
+        @keyframes fishJump {
+            0% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            25% { transform: translateX(-50%) translateY(-40px) rotate(-5deg); }
+            50% { transform: translateX(-50%) translateY(-60px) rotate(0deg); }
+            75% { transform: translateX(-50%) translateY(-40px) rotate(5deg); }
+            100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+        }
+
+        /* 3D Rocket */
+        .rocket-3d {
+            position: absolute;
+            bottom: 50px;
+            left: 100px;
+            width: 40px;
+            height: 80px;
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+            z-index: 30;
+            transition: left 0.05s linear;
+        }
+
+        .rocket-body {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #888, #ccc, #888);
+            clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+            transform: translateZ(0);
+        }
+
+        .rocket-wing {
+            position: absolute;
+            width: 20px;
+            height: 30px;
+            background: linear-gradient(to bottom, #ccc, #999);
+            transform-origin: center bottom;
+        }
+
+        .wing-left {
+            bottom: 0;
+            left: -15px;
+            clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+            transform: rotate(-15deg) translateZ(-5px);
+        }
+
+        .wing-right {
+            bottom: 0;
+            right: -15px;
+            clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+            transform: rotate(15deg) translateZ(-5px);
+        }
+
+        .rocket-window {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 15px;
+            height: 15px;
+            background: linear-gradient(45deg, #00aaff, #00ffff);
+            border-radius: 50%;
+            transform: translateX(-50%) translateZ(5px);
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .rocket-fire {
+            position: absolute;
+            bottom: -25px;
+            left: 15px;
+            width: 10px;
+            height: 20px;
+            background: linear-gradient(to bottom, #ff9a00, #ff6a00, transparent);
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: fire 0.3s infinite alternate;
+            transform: translateZ(-2px);
+        }
+
+        /* 3D Asteroids */
+        .asteroid-3d {
+            position: absolute;
+            background: linear-gradient(45deg, #555, #333);
+            border-radius: 50%;
+            z-index: 5;
+            transform-style: preserve-3d;
+            box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5),
+                        inset 2px 2px 5px rgba(255, 255, 255, 0.2);
+        }
+
+        .bullet-3d {
+            position: absolute;
+            width: 4px;
+            height: 15px;
+            background: linear-gradient(to bottom, #00ffff, #0088ff);
+            border-radius: 2px;
+            z-index: 6;
+            transform-style: preserve-3d;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .explosion-3d {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #ff9a00, #ff6a00, transparent);
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 7;
+            animation: explode 0.5s forwards;
+            transform-style: preserve-3d;
+        }
+
+        /* Water Tap */
+        .water-tap {
+            position: absolute;
+            top: 50px;
+            right: 120px;
+            width: 40px;
+            height: 60px;
+            transform-style: preserve-3d;
+            z-index: 25;
+            transform: translateZ(10px);
+        }
+
+        .tap-base {
+            position: absolute;
+            width: 20px;
+            height: 30px;
+            background: linear-gradient(to bottom, #c0c0c0, #909090);
+            border-radius: 5px 5px 0 0;
+            top: 0;
+            left: 10px;
+            transform: translateZ(5px);
+        }
+
+        .tap-spout {
+            position: absolute;
+            width: 15px;
+            height: 25px;
+            background: linear-gradient(to bottom, #a0a0a0, #808080);
+            border-radius: 0 0 10px 10px;
+            top: 30px;
+            left: 12px;
+            transform: translateZ(5px);
+        }
+
+        .water-stream {
+            position: absolute;
+            top: 55px;
+            left: 19px;
+            width: 8px;
+            height: 0;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(0, 150, 255, 0.8));
+            border-radius: 0 0 4px 4px;
+            transform: translateZ(4px);
+            transition: height 0.3s ease;
+            z-index: 4;
+            filter: blur(1px);
+        }
+
+        .water-droplets {
+            position: absolute;
+            top: 55px;
+            left: 19px;
+            width: 8px;
+            height: 200px;
+            transform: translateZ(3px);
+            z-index: 3;
+        }
+
+        .droplet {
+            position: absolute;
+            width: 6px;
+            height: 8px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(0, 150, 255, 0.9));
+            border-radius: 50%;
+            opacity: 0;
+            filter: blur(0.5px);
+        }
+
+        /* Game UI */
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(100, 200, 255, 0.5);
+            transform: translateZ(0);
+        }
+
+        .score, .level {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+
+        .water-level {
+            width: 150px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+            border: 1px solid rgba(100, 200, 255, 0.5);
+        }
+
+        .water-fill {
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(to right, #0066cc, #00aaff);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 5px #00aaff;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateZ(50px);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            border: 2px solid #00aaff;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.8);
+        }
+
+        .game-over h2 {
+            color: #ff4757;
+            margin-bottom: 20px;
+            font-size: 32px;
+            text-shadow: 0 0 10px #ff4757;
+        }
+
+        .restart-btn {
+            padding: 10px 20px;
+            background: linear-gradient(to right, #0066cc, #00aaff);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 0 10px #00aaff;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 30;
+            border: 1px solid rgba(100, 200, 255, 0.5);
+        }
+
+        /* Animations */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes rotateSlow {
+            0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+        }
+
+        @keyframes tail-wiggle {
+            from { transform: rotate(-10deg); }
+            to { transform: rotate(10deg); }
+        }
+
+        @keyframes fire {
+            from { height: 15px; opacity: 0.8; }
+            to { height: 25px; opacity: 1; }
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        @keyframes droplet-fall {
+            0% { transform: translateY(0) scale(0.8); opacity: 0; }
+            10% { opacity: 1; transform: scale(1); }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(200px) scale(1.2); opacity: 0; }
+        }
+
+        @keyframes water-stream {
+            0% { height: 0; opacity: 0; }
+            10% { height: 100px; opacity: 1; }
+            90% { height: 100px; opacity: 1; }
+            100% { height: 0; opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="space-3d">
+            <div class="stars-3d" id="stars-3d"></div>
+            <div class="nebula nebula-1"></div>
+            <div class="nebula nebula-2"></div>
+        </div>
+        
+        <div class="rocket-3d" id="rocket">
+            <div class="rocket-body"></div>
+            <div class="rocket-wing wing-left"></div>
+            <div class="rocket-wing wing-right"></div>
+            <div class="rocket-window"></div>
+            <div class="rocket-fire"></div>
+        </div>
+        
+        <div class="water-tap">
+            <div class="tap-base"></div>
+            <div class="tap-spout"></div>
+            <div class="water-stream" id="water-stream"></div>
+            <div class="water-droplets" id="water-droplets"></div>
+        </div>
+        
+        <div class="fishbowl-3d">
+            <div class="bowl">
+                <div class="water" id="water">
+                    <div class="cosmic-fish" id="fish">
+                        <div class="fish-tail"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-ui">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="level">Level: <span id="level">1</span></div>
+            <div class="water-level">
+                <div class="water-fill" id="water-fill"></div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            Use LEFT and RIGHT arrows to move, SPACE to shoot
+        </div>
+        
+        <div class="game-over" id="game-over">
+            <h2>MISSION FAILED!</h2>
+            <p>Your fish didn't survive...</p>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button class="restart-btn" id="restart-btn">TRY AGAIN</button>
+        </div>
+    </div>
+    <img src="profile.jpg" alt="">
+
+    <script>
+        // Game state
+        let score = 0;
+        let level = 1;
+        let waterLevel = 50;
+        let gameActive = true;
+        let asteroids = [];
+        let bullets = [];
+        let asteroidInterval;
+        let rocketX = 100;
+        let keys = {};
+        let shootCooldown = false;
+        let combo = 0;
+        let lastHitTime = 0;
+        
+        // DOM elements
+        const rocket = document.getElementById('rocket');
+        const waterElement = document.getElementById('water');
+        const waterFillElement = document.getElementById('water-fill');
+        const fishElement = document.getElementById('fish');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const gameOverElement = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const restartBtnElement = document.getElementById('restart-btn');
+        const stars3dElement = document.getElementById('stars-3d');
+        const waterStream = document.getElementById('water-stream');
+        const waterDroplets = document.getElementById('water-droplets');
+        
+        // Create 3D stars for background
+        function create3DStars() {
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                const size = Math.random() * 2 + 1;
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                const duration = Math.random() * 2 + 1;
+                const depth = Math.random() * 500 - 250;
+                
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${left}%`;
+                star.style.top = `${top}%`;
+                star.style.animationDuration = `${duration}s`;
+                star.style.transform = `translateZ(${depth}px)`;
+                
+                stars3dElement.appendChild(star);
+            }
+        }
+        
+        // Update water level
+        function updateWaterLevel() {
+            document.documentElement.style.setProperty('--water-level', waterLevel);
+            waterFillElement.style.width = `${waterLevel}%`;
+            
+            const fishBottom = 15 + (waterLevel * 1.8);
+            fishElement.style.bottom = `${fishBottom}%`;
+            
+            if (waterLevel < 20) {
+                fishElement.style.background = 'linear-gradient(to right, #ff3333, #ff6666)';
+                fishElement.style.boxShadow = '0 0 8px #ff3333';
+            } else if (waterLevel < 50) {
+                fishElement.style.background = 'linear-gradient(to right, #ff9933, #ffcc66)';
+                fishElement.style.boxShadow = '0 0 8px #ff9933';
+            } else {
+                fishElement.style.background = 'linear-gradient(to right, #ff6a00, #ff9a00)';
+                fishElement.style.boxShadow = '0 0 8px #ff9a00';
+            }
+            
+            if (waterLevel <= 0) {
+                waterLevel = 0;
+                gameActive = false;
+                clearInterval(asteroidInterval);
+                
+                finalScoreElement.textContent = score;
+                gameOverElement.style.display = 'block';
+            }
+        }
+        
+        // Make fish jump
+        function makeFishJump() {
+            fishElement.classList.add('fish-jump');
+            setTimeout(() => {
+                fishElement.classList.remove('fish-jump');
+            }, 1000);
+        }
+        
+        // Create water droplet effect
+        function createWaterDroplets() {
+            // Reset and show water stream
+            waterStream.style.animation = 'none';
+            void waterStream.offsetWidth; // Trigger reflow
+            waterStream.style.animation = 'water-stream 1.5s forwards';
+            
+            // Clear previous droplets
+            waterDroplets.innerHTML = '';
+            
+            // Create multiple droplets
+            for (let i = 0; i < 8; i++) {
+                const droplet = document.createElement('div');
+                droplet.className = 'droplet';
+                
+                const delay = i * 180;
+                const leftOffset = (Math.random() * 6) - 3;
+                
+                droplet.style.left = `${leftOffset}px`;
+                droplet.style.animation = `droplet-fall 1s ${delay}ms infinite`;
+                
+                waterDroplets.appendChild(droplet);
+            }
+        }
+        
+        // Create 3D asteroid
+        function create3DAsteroid() {
+            if (!gameActive) return;
+            
+            const asteroid = document.createElement('div');
+            asteroid.className = 'asteroid-3d';
+            
+            const size = Math.random() * 30 + 20;
+            const left = Math.random() * 800;
+            const speed = Math.random() * 3 + level;
+            const rotation = Math.random() * 360;
+            const depth = Math.random() * 100 - 50;
+            
+            asteroid.style.width = `${size}px`;
+            asteroid.style.height = `${size}px`;
+            asteroid.style.left = `${left}px`;
+            asteroid.style.top = `-${size}px`;
+            asteroid.style.transform = `rotate(${rotation}deg) translateZ(${depth}px)`;
+            
+            document.querySelector('.game-container').appendChild(asteroid);
+            
+            const asteroidObj = {
+                element: asteroid,
+                x: left,
+                y: -size,
+                size: size,
+                speed: speed,
+                rotation: rotation,
+                depth: depth
+            };
+            
+            asteroids.push(asteroidObj);
+        }
+        
+        // Move asteroids
+        function moveAsteroids() {
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                asteroid.y += asteroid.speed;
+                asteroid.rotation += asteroid.speed;
+                asteroid.element.style.top = `${asteroid.y}px`;
+                asteroid.element.style.transform = `rotate(${asteroid.rotation}deg) translateZ(${asteroid.depth}px)`;
+                
+                if (asteroid.y > 650) {
+                    asteroid.element.remove();
+                    asteroids.splice(i, 1);
+                    
+                    waterLevel -= 5;
+                    updateWaterLevel();
+                    combo = 0; // Reset combo when asteroid reaches bottom
+                }
+            }
+        }
+        
+        // Shoot bullet
+        function shoot() {
+            if (!gameActive || shootCooldown) return;
+            
+            shootCooldown = true;
+            
+            const bullet = document.createElement('div');
+            bullet.className = 'bullet-3d';
+            
+            bullet.style.left = `${rocketX + 20}px`;
+            bullet.style.bottom = `70px`;
+            bullet.style.transform = 'translateZ(0)';
+            
+            document.querySelector('.game-container').appendChild(bullet);
+            
+            const bulletObj = {
+                element: bullet,
+                x: rocketX + 20,
+                y: 70,
+                speed: 15
+            };
+            
+            bullets.push(bulletObj);
+            
+            setTimeout(() => {
+                shootCooldown = false;
+            }, 150);
+        }
+        
+        // Move bullets
+        function moveBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.y += bullet.speed;
+                bullet.element.style.bottom = `${bullet.y}px`;
+                
+                if (bullet.y > 650) {
+                    bullet.element.remove();
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+        
+        // Check collisions
+        function checkCollisions() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                
+                for (let j = asteroids.length - 1; j >= 0; j--) {
+                    const asteroid = asteroids[j];
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(bullet.x - asteroid.x, 2) + 
+                        Math.pow(bullet.y - (650 - asteroid.y - asteroid.size), 2)
+                    );
+                    
+                    if (distance < asteroid.size / 2 + 5) {
+                        create3DExplosion(asteroid.x, asteroid.y + asteroid.size / 2, asteroid.depth);
+                        
+                        bullet.element.remove();
+                        bullets.splice(i, 1);
+                        
+                        asteroid.element.remove();
+                        asteroids.splice(j, 1);
+                        
+                        // Calculate combo
+                        const now = Date.now();
+                        if (now - lastHitTime < 2000) { // 2 second window for combos
+                            combo++;
+                        } else {
+                            combo = 1;
+                        }
+                        lastHitTime = now;
+                        
+                        // Increase score based on combo
+                        const points = 10 * combo;
+                        score += points;
+                        
+                        waterLevel += 5;
+                        if (waterLevel > 100) waterLevel = 100;
+                        
+                        scoreElement.textContent = score;
+                        updateWaterLevel();
+                        
+                        // Create water effect
+                        createWaterDroplets();
+                        
+                        // Make fish jump for high combos
+                        if (combo >= 3) {
+                            makeFishJump();
+                        }
+                        
+                        const newLevel = Math.floor(score / 100) + 1;
+                        if (newLevel > level) {
+                            level = newLevel;
+                            levelElement.textContent = level;
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Create 3D explosion effect
+        function create3DExplosion(x, y, depth) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion-3d';
+            
+            explosion.style.left = `${x - 15}px`;
+            explosion.style.top = `${y - 15}px`;
+            explosion.style.transform = `translateZ(${depth}px)`;
+            
+            document.querySelector('.game-container').appendChild(explosion);
+            
+            setTimeout(() => {
+                explosion.remove();
+            }, 500);
+        }
+        
+        // Initialize game
+        function initGame() {
+            score = 0;
+            level = 1;
+            waterLevel = 50;
+            gameActive = true;
+            asteroids = [];
+            bullets = [];
+            rocketX = 100;
+            combo = 0;
+            lastHitTime = 0;
+            rocket.style.left = `${rocketX}px`;
+            
+            scoreElement.textContent = score;
+            levelElement.textContent = level;
+            updateWaterLevel();
+            
+            document.querySelectorAll('.asteroid-3d, .bullet-3d, .explosion-3d').forEach(el => el.remove());
+            
+            gameOverElement.style.display = 'none';
+            
+            clearInterval(asteroidInterval);
+            asteroidInterval = setInterval(create3DAsteroid, 1000 - Math.min(500, level * 50));
+            
+            gameLoop();
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            // Move rocket based on key presses
+            if (keys.ArrowLeft && rocketX > 10) {
+                rocketX -= 15;
+                rocket.style.left = `${rocketX}px`;
+            }
+            if (keys.ArrowRight && rocketX < 850) {
+                rocketX += 15;
+                rocket.style.left = `${rocketX}px`;
+            }
+            if (keys[' ']) {
+                shoot();
+            }
+            
+            moveAsteroids();
+            moveBullets();
+            checkCollisions();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners for keyboard
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        restartBtnElement.addEventListener('click', initGame);
+        
+        // Initialize the game
+        create3DStars();
+        initGame();
+    </script>
+</body>
+</html>
